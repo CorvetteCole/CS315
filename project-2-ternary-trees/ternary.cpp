@@ -1,64 +1,120 @@
 #include <iostream>
 
-const int NODE_SIZE = 2;
 
 class Node {
 public:
-    Node(int a, int b) {
-        values[0] = a;
-        values[NODE_SIZE - 1] = b;
-        valueSet[0] = true;
-        valueSet[1] = true;
+
+    Node(int values[], int numValues, int maxChildren = 3, int maxValues = 2) {
+        this->MAX_CHILDREN = maxChildren;
+        this->MAX_VALUES = maxChildren;
+        init();
+        this->values = values;
+        this->numValues = numValues;
     }
 
-    explicit Node(int a) {
-        values[0] = a;
-        valueSet[0] = true;
-    }
 
-    Node() = default;
+//    Node(int a, int b) {
+//        values[0] = a;
+//        values[MAX_VALUES - 1] = b;
+//        valueSet[0] = true;
+//        valueSet[1] = true;
+//    }
 
     bool isEmpty() {
-        return !(valueSet[0] || valueSet[1]);
+        return values == nullptr;
     }
 
     bool hasChildren() {
-        bool hasChildren = valueSet[NODE_SIZE - 1]; // last value will never exist if children exist
-        if (hasChildren) {
-            hasChildren = left == nullptr && middle == nullptr && right == nullptr;
-        }
-        return hasChildren;
+//        bool hasChildren = valueSet[MAX_VALUES - 1]; // last value will never exist if children exist
+//
+//        if (hasChildren) {
+//            hasChildren = left == nullptr && middle == nullptr && right == nullptr;
+//        }
+        return nodes == nullptr;
     }
 
     void insertValue(int newValue) {
-        if (isEmpty()) {
+        if (values == nullptr) {
             // great news, node is empty we can just insert here
+            // allocate new arrays
+            values = new int[MAX_VALUES]{};
             values[0] = newValue;
-            valueSet[0] = true;
+            numValues++;
+        } else if (numValues < MAX_VALUES) {
+            // good news, there is some room so we can insert here
             // TODO code needs to be rewritten slightly to handle different node sizes (sorting needed etc)
-        } else if (!valueSet[NODE_SIZE - 1]) {
-            // good news, b is empty, we can just insert here
-            // if newValue < a, move a to b and insert in a. otherwise just insert in b
-            if (newValue < values[0]) {
-                values[NODE_SIZE - 1] = values[0];
-                values[0] = newValue;
+
+            if (newValue > values[numValues - 1]) { // new value is largest value seen, just add it to the end
+                values[numValues] = newValue;
+                numValues++;
             } else {
-                values[NODE_SIZE - 1] = newValue;
+                int newValueIndex = 0;
+                if (newValue >= values[0]) {
+                    // try to predict where index will be
+                    // if we make a safe assumption that these random numbers might follow a bell curve we can
+                    // calculate a "predicated" index based on the max and min numbers
+                    int predictedIndex = (((float) values[numValues - 1] / (float) values[0]) * numValues) - 1;
+
+                    // now we need to find the actual index it will be at, we can use our predicted value to
+                    // speed this up
+                    if (values[predictedIndex] > newValue) {
+                        // if value at index is larger than newValue our prediction was too high
+                        for (; predictedIndex > 0; predictedIndex--) {
+                            if (values[predictedIndex] < newValue) {
+                                // found the actual index!
+                                newValueIndex = predictedIndex;
+                            }
+                        }
+                    } else if (values[predictedIndex] < newValue) {
+                        if (values[predictedIndex + 1] > newValue) {
+                            // wow our prediction was spot on.
+                            newValueIndex = predictedIndex;
+                        } else {
+                            for (; predictedIndex < numValues; predictedIndex++) {
+                                if (values[predictedIndex + 1] > newValue) {
+                                    // found the actual index!
+                                    newValueIndex = predictedIndex;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                int *temp = new int[MAX_VALUES];
+                temp[newValueIndex] = newValue;
+                for (int i = 0; i < numValues; i++) {
+                    if (i >= newValueIndex) {
+                        temp[i + 1] = values[i];
+                    } else {
+                        temp[i] = values[i];
+                    }
+
+                }
+
+                values = temp;
+                numValues++;
+                // TODO uncomment this and test
+                //delete[](temp);
             }
-            valueSet[NODE_SIZE - 1] = true;
         } else {
             // can't insert here, check children
             Node **target;  // pointer to pointer
+
+
+            // TODO uh-oh brain time you are gonna need thinky bits for this
             if (newValue <= values[0]) {
                 // insert in to node on left
                 target = &left;
-            } else if (newValue <= values[NODE_SIZE - 1]) {
+            } else if (newValue <= values[MAX_VALUES - 1]) {
                 // insert in to node in middle
                 target = &middle;
             } else { // (implicitly, newValue > topNode.b)
                 // insert in to node on right
                 target = &right;
             }
+
+
+
             if (*target == nullptr) {
                 Node *newNode = new Node(newValue);
                 *target = newNode;
@@ -100,9 +156,9 @@ public:
             middle->print();
         }
 
-        if (valueSet[NODE_SIZE - 1]) {
+        if (valueSet[MAX_VALUES - 1]) {
             printf(" ");
-            printf("%d", values[NODE_SIZE - 1]);
+            printf("%d", values[MAX_VALUES - 1]);
         }
         if (right) {
             printf(" ");
@@ -112,18 +168,35 @@ public:
         if (!topNode) {
             std::cout << ")";
         }
-
     }
 
 
 private:
-    int values[NODE_SIZE]{};
-    bool valueSet[NODE_SIZE]{}; // default for array is false
-    Node *left{};
-    Node *middle{};
-    Node *right{};
+    static int MAX_VALUES;
+    static int MAX_CHILDREN;
 
+    // TODO need to init arrays
+    explicit Node(int a) {
+        init();
+        values[0] = a;
+        numValues++;
+    }
 
+    Node() {
+        init();
+    }
+
+    void init() {
+        nodes = new Node[MAX_CHILDREN]{};
+    }
+
+//    Node *left{};
+//    Node *middle{};
+//    Node *right{};
+
+    int numValues = 0;
+    Node *nodes;
+    int *values;
 };
 
 int getInt() {
