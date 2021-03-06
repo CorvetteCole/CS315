@@ -10,9 +10,12 @@ NUMPOINTS = 1000
 SEED = 49
 LIMIT = 10000
 
+NUMVALUES = 2 # Number of values stored in each tree node
+NUMCHILDREN = 3 # Number of children each node can have
+
 # compile and run the student program, placing the result in tmpRun.out
 run: $(GOAL) randGen.pl
-	./randGen.pl $(SEED) $(LIMIT) | ./$(GOAL) $(NUMPOINTS) > tmpRun.out
+	./randGen.pl $(SEED) $(LIMIT) | ./$(GOAL) $(NUMPOINTS) $(NUMVALUES) $(NUMCHILDREN) > tmpRun.out
 	less tmpRun.out
 
 # compile and run a known working program, placing the result in tmpWorking.out

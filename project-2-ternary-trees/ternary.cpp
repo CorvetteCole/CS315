@@ -1,12 +1,14 @@
 #include <iostream>
-
+#include <bits/stdc++.h> // TODO get rid of this
 
 class Node {
 public:
+    static int MAX_VALUES;
+    static int MAX_CHILDREN;
 
-    Node(int values[], int numValues, int maxChildren = 3, int maxValues = 2) {
-        this->MAX_CHILDREN = maxChildren;
-        this->MAX_VALUES = maxChildren;
+    Node(int values[], int numValues = 2, int maxChildren = 3) {
+        MAX_CHILDREN = maxChildren;
+        MAX_VALUES = numValues;
         init();
         this->values = values;
         this->numValues = numValues;
@@ -30,7 +32,7 @@ public:
 //        if (hasChildren) {
 //            hasChildren = left == nullptr && middle == nullptr && right == nullptr;
 //        }
-        return nodes == nullptr;
+        return children != nullptr;
     }
 
     void insertValue(int newValue) {
@@ -42,8 +44,6 @@ public:
             numValues++;
         } else if (numValues < MAX_VALUES) {
             // good news, there is some room so we can insert here
-            // TODO code needs to be rewritten slightly to handle different node sizes (sorting needed etc)
-
             if (newValue > values[numValues - 1]) { // new value is largest value seen, just add it to the end
                 values[numValues] = newValue;
                 numValues++;
@@ -54,6 +54,10 @@ public:
                     // if we make a safe assumption that these random numbers might follow a bell curve we can
                     // calculate a "predicated" index based on the max and min numbers
                     int predictedIndex = (((float) values[numValues - 1] / (float) values[0]) * numValues) - 1;
+
+                    if (predictedIndex < 0 || predictedIndex >= numValues){
+                        predictedIndex = 0;
+                    }
 
                     // now we need to find the actual index it will be at, we can use our predicted value to
                     // speed this up
@@ -98,86 +102,282 @@ public:
             }
         } else {
             // can't insert here, check children
-            Node **target;  // pointer to pointer
+            //Node **target;  // pointer to pointer
 
+            int targetNodeIndex = 0;
 
-            // TODO uh-oh brain time you are gonna need thinky bits for this
-            if (newValue <= values[0]) {
-                // insert in to node on left
-                target = &left;
-            } else if (newValue <= values[MAX_VALUES - 1]) {
-                // insert in to node in middle
-                target = &middle;
-            } else { // (implicitly, newValue > topNode.b)
-                // insert in to node on right
-                target = &right;
+            int compareLimits = MAX_VALUES - MAX_CHILDREN;
+            if (compareLimits >= 0) { // values >= children
+                int valuesPerChild = MAX_VALUES / (MAX_CHILDREN - 1);
+                int extraValues = MAX_VALUES % (MAX_CHILDREN - 1);
+                // TODO investigate possible point of failure if numValues != MAX_VALUES
+                // iterate children node index by 1, value index by calculated valuesPerChild
+                for (int i = 0, valueIndex = 0;
+                     valueIndex < MAX_VALUES; valueIndex += valuesPerChild) {
+                    if (extraValues > 0) {
+                        valueIndex++;
+                        extraValues--;
+                    }
+                    if (newValue <= values[valueIndex]) {
+                        targetNodeIndex = i;
+                        break;
+                    }
+                    // TODO possible source of bugs
+                    targetNodeIndex = i;
+                }
+
+            } else { // values < children
+
+                // offset to account for there being one more state than values in the math
+                int childrenPerValue = MAX_CHILDREN / (MAX_VALUES + 1);
+                int extraChildren = MAX_CHILDREN % (MAX_VALUES + 1);
+                // TODO investigate possible point of failure if i != MAX_VALUES
+                // iterate value index by 1, children index by calculated childrenPerValue
+                for (int i = 0, childIndex = 0;
+                     childIndex < MAX_CHILDREN; childIndex += childrenPerValue) {
+                    if (extraChildren > 0) {
+                        childIndex++;
+                        extraChildren--;
+                    }
+                    int tempValue = values[i];
+
+                    if (newValue <= tempValue) {
+                        targetNodeIndex = childIndex;
+                        break;
+                    }
+                    // TODO possible source of bugs
+                    targetNodeIndex = childIndex;
+                    if (i + 1 != numValues){
+                        i++;
+                    }
+                }
             }
 
-
-
-            if (*target == nullptr) {
-                Node *newNode = new Node(newValue);
-                *target = newNode;
-            } else {
-                (*target)->insertValue(newValue);
+            if (children == nullptr){
+                children = new Node[MAX_CHILDREN]{};
             }
+
+            auto targetNode = (children + targetNodeIndex);
+            (children + targetNodeIndex)->insertValue(newValue);
+            if (targetNodeIndex + 1 > numChildren){
+                numChildren = targetNodeIndex + 1;
+            }
+//            if ((children + targetNodeIndex)->numChildren == 0) { // TODO verify this works as intended
+//                Node *newNode = new Node(newValue);
+//                numChildren++;
+//                printf("numChildren in target node: %d\n" , children[targetNodeIndex].numChildren);
+//                *(children + targetNodeIndex) = *newNode; // TODO no way this works
+//            } else {
+//                (children + targetNodeIndex)->insertValue(newValue);
+//            }
         }
     }
 
-    Node getLeftNode() {
-        return *left;
-    }
-
-    Node getMiddleNode() {
-        return *middle;
-    }
-
-    Node getRightNode() {
-        return *right;
-    }
 
     void print(bool topNode = false) {
         if (!topNode) {
             std::cout << "(";
         }
 
+//        if (hasChildren()) {
+//            if (children[0].numValues > 0) {
+//                children[0].print();
+//                printf(" ");
+//            }
+//        }
+//
+//        if (numValues >= 1) {
+//            printf("%d", values[0]);
+//        }
+//
+//        if (hasChildren()) {
+//            if (children[1].numValues > 0) {
+//                printf(" ");
+//                children[1].print();
+//            }
+//        }
+//
+//        if (numValues >= 2) {
+//            printf(" ");
+//            printf("%d", values[1]);
+//        }
+//
+//        if (hasChildren()) {
+//            if (children[2].numValues > 0) {
+//                printf(" ");
+//                children[2].print();
+//            }
+//        }
+//
+//
+//        if (!topNode) {
+//            std::cout << ")";
+//        }
 
-        if (left) {
-            left->print();
-            printf(" ");
-        }
 
-        if (valueSet[0]) {
-            printf("%d", values[0]);
-        }
 
-        if (middle) {
-            printf(" ");
-            middle->print();
-        }
+//        if (numChildren == 0){
+//            for (int valueIndex = 0; valueIndex < numValues; valueIndex++) {
+//                printf("%d", values[valueIndex]);
+//                if (valueIndex != numValues - 1) {
+//                    printf(" ");
+//                }
+//            }
+//        } else {
+//
+//            for (int valueIndex = 0; valueIndex < numValues; valueIndex++) {
+//                if (&children[valueIndex])+ {
+//                    std::cout << "(";
+//                    children[valueIndex].print();
+//                    std::cout << ")";
+//                }
+//
+//                //printf("%d", values[valueIndex]);
+//            }
+//        }
 
-        if (valueSet[MAX_VALUES - 1]) {
-            printf(" ");
-            printf("%d", values[MAX_VALUES - 1]);
+//        if (numValues < MAX_VALUES){ // no children present
+//
+//        } else { // children present
+//            if (&children[0]){
+//                children[0].print();
+//                printf(" ");
+//            }
+//            if (values[0])
+//        }
+//
+//
+        if (!hasChildren()) { // no children present
+            for (int valueIndex = 0; valueIndex < numValues; valueIndex++) {
+                printf("%d", values[valueIndex]);
+                if (valueIndex != numValues - 1) {
+                    printf(" ");
+                }
+            }
         }
-        if (right) {
-            printf(" ");
-            right->print();
-        }
+//        else {
+//            for (int valueIndex = 0; valueIndex < MAX_VALUES; valueIndex++){
+//                printf("%d", values[valueIndex]);
+//                if (valueIndex != numValues - 1) {
+//                    printf(" ");
+//                }
+//            }
+//            printf("(");
+//            for (int i = 0; i < numChildren; i++) {
+//                children[i].print();
+//            }
+//            printf(")");
+//        }
 
+
+        else { // children present
+
+            int childrenPerValue = 1;
+            int extraChildren = 0;
+            int valuesPerChild = 1;
+            int extraValues = 0;
+
+            if (MAX_VALUES >= MAX_CHILDREN) {
+                valuesPerChild= MAX_VALUES / (MAX_CHILDREN - 1);
+                extraValues = MAX_VALUES % (MAX_CHILDREN - 1);
+            } else { // values < children
+                childrenPerValue = MAX_CHILDREN / (MAX_VALUES + 1);
+                extraChildren = MAX_CHILDREN % (MAX_VALUES + 1);
+            }
+
+
+
+
+
+
+
+            if (numValues <= numChildren){
+                int valueIndex = 0;
+                int childIndex = 0;
+
+                while (childIndex < numChildren){
+                    int targetChildIndex = childIndex + childrenPerValue + !!extraChildren;
+                    if (extraChildren > 0) extraChildren--;
+
+                    for (; childIndex < targetChildIndex; childIndex++){
+                        if (children[childIndex].numValues > 0) {
+                            printf(" ");
+                            children[childIndex].print();
+                            printf(" ");
+                        }
+                    }
+
+                    if (valueIndex < numValues) {
+                        printf("%d", values[valueIndex]);
+                        valueIndex++;
+                    }
+
+                }
+            } else if (numValues > numChildren){
+                int valueIndex = 0;
+                int childIndex = 0;
+                while (valueIndex < numValues && childIndex < numChildren){
+                    children[childIndex].print();
+                    childIndex++;
+                    for (valueIndex = 0; valueIndex < valuesPerChild + !!extraValues; valueIndex++){
+                        if (extraValues > 0) extraValues--;
+                        values[valueIndex];
+                    }
+                }
+
+
+            }
+
+//            for (int valueIndex = 0; valueIndex < numValues; valueIndex++) {
+//                // print children
+//
+//                printf("printing child at index %d for value %d\n", valueIndex, values[valueIndex]);
+//                if (children[valueIndex].numValues > 0) {
+//                    children[valueIndex].print();
+//                }
+//                printf("\n");
+//
+//
+////                for (int childIndex = valueIndex; childIndex < childIndex + childrenPerValue; childIndex++) {
+////                    children[childIndex].print();
+////                    for (childIndex + 1;
+////                         childIndex < numChildren && childIndex < childIndex + childrenPerValue + !!extraChildren; childIndex++) {
+////                        extraChildren--;
+////                        // print children
+////                        children[childIndex].print();
+////                    }
+//
+////                }
+//                printf("%d", values[valueIndex]);
+////                for (valueIndex + 1;
+////                     valueIndex < numValues && valueIndex < valueIndex + valuesPerChild + !!extraValues; valueIndex++) {
+////                    extraValues--;
+////                    // print children
+////                    printf("%d", values[valueIndex]);
+////                    if (valueIndex != numValues - 1){
+////                        printf(" ");
+////                    }
+////                }
+//
+//                // TODO might need to do something about the space printing above
+//                //                 if (valueIndex != numValues - 1){
+//                //                    printf(" ");
+//                //                }
+//
+//            }
+        }
         if (!topNode) {
             std::cout << ")";
         }
+
     }
 
 
 private:
-    static int MAX_VALUES;
-    static int MAX_CHILDREN;
-
     // TODO need to init arrays
     explicit Node(int a) {
         init();
+        values = new int [MAX_VALUES];
         values[0] = a;
         numValues++;
     }
@@ -187,7 +387,7 @@ private:
     }
 
     void init() {
-        nodes = new Node[MAX_CHILDREN]{};
+        //children = ;
     }
 
 //    Node *left{};
@@ -195,9 +395,18 @@ private:
 //    Node *right{};
 
     int numValues = 0;
-    Node *nodes;
+    int numChildren = 0;
+    Node *children = nullptr;
     int *values;
 };
+
+int Node::MAX_VALUES = 0;
+int Node::MAX_CHILDREN = 0;
+
+
+
+
+
 
 int getInt() {
     int val;
@@ -249,18 +458,36 @@ int getInt() {
 
 
 int main(int argc, char **argv) {
-    const int NUM_INTEGERS = std::atoi(argv[1]);
+    if (argc < 4){
+        printf("please include 3 integer parameters. num points, num values per node, num children per node\n");
+    } else {
 
-    Node topNode = Node(getInt(), getInt());
-//return *this;
-    for (int i = 2; i < NUM_INTEGERS; i++) {
-        int newNum = getInt();
-        //printf("newNum value: %d", newNum);
-        topNode.insertValue(newNum);
+
+        const int NUM_INTEGERS = std::atoi(argv[1]);
+        const int NUM_VALUES = std::atoi(argv[2]);
+        const int NUM_CHILDREN = std::atoi(argv[3]);
+
+//    if (NUM_CHILDREN >= NUM_VALUES) {
+//        printf("num children per node (%d) should be less than num of values (%d)\n", NUM_CHILDREN, NUM_VALUES);
+//    } else {
+
+        int *topValues = new int[NUM_VALUES]{};
+        for (int i = 0; i < NUM_VALUES; i++) {
+            topValues[i] = getInt();
+        }
+        std::sort(topValues, topValues + NUM_VALUES);
+
+        Node topNode = Node(topValues, NUM_VALUES, NUM_CHILDREN);
+
+        for (int i = 2; i < NUM_INTEGERS; i++) {
+            int newNum = getInt();
+            //printf("newNum value: %d", newNum);
+            topNode.insertValue(newNum);
+        }
+
+        topNode.print(true);
+        //traverseNode(topNode);
     }
-
-    topNode.print(true);
-    //traverseNode(topNode);
 
     return 0;
 }
