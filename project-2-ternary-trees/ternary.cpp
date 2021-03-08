@@ -93,44 +93,44 @@ public:
             }
 
 
-            if (numValues <= numChildren) {
-                int valueIndex = 0;
-                int childIndex = 0;
+            int valueIndex = 0;
+            int childIndex = 0;
 
-                while (childIndex < numChildren) {
-                    int targetChildIndex = childIndex + childrenPerValue + !!extraChildren;
-                    if (extraChildren > 0) extraChildren--;
+            while (childIndex < numChildren || valueIndex < numValues) {
+                int targetChildIndex = childIndex + childrenPerValue + !!extraChildren;
+                if (extraChildren > 0) extraChildren--;
 
-                    for (; childIndex < targetChildIndex; childIndex++) {
-                        if (children[childIndex].numValues > 0) {
-                            if (childIndex != 0) {
-                                printf(" ");
-                            }
-                            children[childIndex].print();
-                            if (childIndex != numChildren - 1) {
-                                printf(" ");
-                            }
+                for (; childIndex < targetChildIndex; childIndex++) {
+                    if (children[childIndex].numValues > 0) {
+                        if (childIndex != 0) {
+                            //printf(" ");
+                        }
+                        children[childIndex].print();
+                        if (childIndex != numChildren - 1) {
+                            //printf(" ");
                         }
                     }
+                }
 
-                    if (valueIndex < numValues) {
-                        printf("%d", values[valueIndex]);
-                        valueIndex++;
+                int targetValueIndex = valueIndex + valuesPerChild + !!extraChildren;
+                if (extraValues > 0) extraChildren--;
+
+//                if (valueIndex < numValues){
+//                    printf("%d", values[valueIndex]);
+//                    valueIndex++;
+//                }
+
+                for (; valueIndex < targetValueIndex && valueIndex < numValues; valueIndex++) {
+                    if (valueIndex < targetValueIndex) {
+                        printf(" ");
+                    }
+
+                    printf("%d", values[valueIndex]);
+                    if (valueIndex == targetValueIndex - 1) {
+                        printf(" ");
                     }
 
                 }
-            } else if (numValues > numChildren) {
-                int valueIndex = 0;
-                int childIndex = 0;
-                while (valueIndex < numValues && childIndex < numChildren) {
-                    children[childIndex].print();
-                    childIndex++;
-                    for (valueIndex = 0; valueIndex < valuesPerChild + !!extraValues; valueIndex++) {
-                        if (extraValues > 0) extraValues--;
-                        values[valueIndex];
-                    }
-                }
-
 
             }
         }
